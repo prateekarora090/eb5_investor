@@ -1,54 +1,18 @@
 from crewai import Agent, Task, Crew, Process
 from langchain_google_genai import ChatGoogleGenerativeAI
-<<<<<<< HEAD
-
-# Initialize Gemini model
-gemini_llm = ChatGoogleGenerativeAI(model="gemini-pro")
-
-# Import agents (we'll create these next)
-from agents.document_processor import DocumentProcessor
-from agents.financial_analyst import FinancialAnalyst
-# ... import other agents
-
-# Import tools (we'll create these next)
-from tools.pdf_reader import read_pdf
-from tools.web_scraper import scrape_website
-# ... import other tools
-
-# Main workflow
-def analyze_investments(investments):
-    agents = [
-        DocumentProcessor(llm=gemini_llm),
-        FinancialAnalyst(llm=gemini_llm),
-        # ... other agents
-    ]
-
-    tasks = []
-    for investment in investments:
-        tasks.extend([
-            Task(
-                description=f"Process documents for investment {investment['id']}",
-                agent=agents[0]  # Document Processor
-            ),
-            Task(
-                description=f"Analyze financials for investment {investment['id']}",
-                agent=agents[1]  # Financial Analyst
-            ),
-            # ... other tasks
-        ])
-
-    crew = Crew(
-        agents=agents,
-=======
 from langchain_openai import OpenAI
 import os
 import logging
 import json
 from dotenv import load_dotenv
 import argparse
+
+# Import core utilities
 from preprocessing.document_preprocessor import DocumentPreprocessor
+from context_assembler import ContextAssembler
 
 # Import agents
+from agents.base_agent import BaseAgent
 from agents.document_processor import DocumentProcessor
 from agents.financial_analyst import FinancialAnalyst
 from agents.immigration_law_expert import ImmigrationLawExpert
@@ -86,77 +50,73 @@ def get_llm(model_name="gemini-pro"):
 
 def analyze_investments(investments, llm):
     # Initialize agents
-    document_processor = DocumentProcessor(llm=llm)
-    financial_analyst = FinancialAnalyst(llm=llm)
-    immigration_expert = ImmigrationLawExpert(llm=llm)
-    risk_assessor = RiskAssessor(llm=llm)
-    market_researcher = MarketResearchSpecialist(llm=llm)
-    eb5_specialist = EB5ProgramSpecialist(llm=llm)
-    investment_comparator = InvestmentComparator(llm=llm)
+    # document_processor = DocumentProcessor(llm=llm)
+    # market_researcher = MarketResearchSpecialist(llm=llm)
 
-    tasks = []
+    assembler = ContextAssembler('preprocessing/outputs/preprocessed_data')
+    agents = {
+        'financial_analyst': FinancialAnalyst(llm=llm),
+        'immigration_expert': ImmigrationLawExpert(llm=llm),
+        'risk_assessor': RiskAssessor(llm=llm),
+        'eb5_specialist': EB5ProgramSpecialist(llm=llm)
+    }
+
+    results = []
     for investment in investments:
-        # Process preprocessed data
-        preprocessed_file = f"preprocessed_data/{investment['id']}/metadata.json"
-        with open(preprocessed_file, 'r') as f:
-            preprocessed_data = json.load(f)
+        # Grab an assembled context taking into acccount all of the provided input files
+        context = assembler.assemble_context(investment['id'])
         
-        tasks.extend([
+        tasks = [
             Task(
-                description=f"Analyze financial aspects of investment {investment['id']}",
-                agent=financial_analyst,
-                context=preprocessed_data
+                description=f"Analyze financial viability and projects of investment {investment['id']}",
+                agent=agents['financial_analyst'],
+                context=context
             ),
             Task(
-                description=f"Evaluate immigration law compliance for investment {investment['id']}",
-                agent=immigration_expert,
-                context=preprocessed_data
+                description=f"Evaluate compliance with immigration laws and EB-5 program requirements for {investment['id']}",
+                agent=agents['immigration_expert'],
+                context=context
             ),
             Task(
-                description=f"Assess risks for investment {investment['id']}",
-                agent=risk_assessor,
-                context=preprocessed_data
-            ),
-            Task(
-                description=f"Conduct market research for investment {investment['id']}",
-                agent=market_researcher,
-                context=preprocessed_data
+                description=f"Identify and assess potential risks for investment {investment['id']}",
+                agent=agents['risk_assessor'],
+                context=context
             ),
             Task(
                 description=f"Evaluate EB-5 program compliance for investment {investment['id']}",
-                agent=eb5_specialist,
-                context=preprocessed_data
+                agent=agents['eb5_specialist'],
+                context=context
             )
-        ])
+        ]
+
+        crew = Crew(
+            agents=list(agents.values()),
+            tasks=tasks,
+            verbose=2
+        )
+
+        result = crew.kickoff()
+        results.append(result)
 
     # Add final comparison task
-    tasks.append(
-        Task(
-            description="Compare and rank all analyzed investments",
-            agent=investment_comparator
-        )
+    comparison_task = Task(
+        description="Compare and rank all analyzed investments",
+        agent=InvestmentComparator(llm=llm),
+        context=results
     )
+    final_result = comparison_task.execute()
+    return final_result
 
-    crew = Crew(
-        agents=[document_processor, financial_analyst, immigration_expert, risk_assessor, 
-                market_researcher, eb5_specialist, investment_comparator],
->>>>>>> initial-mvp
-        tasks=tasks,
-        verbose=2
-    )
+    # crew = Crew(
+    #     agents=[document_processor, financial_analyst, immigration_expert, risk_assessor, 
+    #             market_researcher, eb5_specialist, investment_comparator],
+    #     tasks=tasks,
+    #     verbose=2
+    # )
 
-    result = crew.kickoff()
-    return result
+    # result = crew.kickoff()
+    # return result
 
-<<<<<<< HEAD
-if __name__ == "__main__":
-    investments = [
-        {"id": "1", "folder_id": "folder1", "website": "http://example1.com"},
-        {"id": "2", "folder_id": "folder2", "website": "http://example2.com"},
-    ]
-    result = analyze_investments(investments)
-    print(result)
-=======
 def main():
     parser = argparse.ArgumentParser(description="EB-5 Investment Analysis")
     parser.add_argument("action", choices=["preprocess", "analyze"], help="Action to perform")
@@ -165,7 +125,9 @@ def main():
     if args.action == "preprocess":
         print("Starting preprocessing. Check 'preprocessing.log' for progress.")
         preprocessor = DocumentPreprocessor()
+        log_file = os.path.join('preprocessing', 'outputs', 'preprocessing.log')
         preprocessor.preprocess_investments('inputs/options.json')
+        
     elif args.action == "analyze":
         # Get llm
         llm = get_llm("gpt-3.5-turbo")  # Use this for testing
@@ -190,4 +152,4 @@ def main():
 
 if __name__ == "__main__":
     main()
->>>>>>> initial-mvp
+
