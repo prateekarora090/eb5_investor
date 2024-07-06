@@ -9,7 +9,7 @@ import argparse
 
 # Import core utilities
 from preprocessing.document_preprocessor import DocumentPreprocessor
-from context_assembler import ContextAssembler
+from context_assembler.context_assembler import ContextAssembler
 
 # Import agents
 from agents.base_agent import BaseAgent
@@ -73,7 +73,8 @@ def analyze_investments(investments, llm):
                 context=context
             ),
             Task(
-                description=f"Evaluate compliance with immigration laws and EB-5 program requirements for {investment['id']}",
+                description=f"""Evaluate compliance with immigration laws and EB-5 program requirements for {investment['id']} with a special focus on
+                with a special focus on law compliance, including investor eligibility, source of funds issues, and general USCIS policies.""",
                 agent=agents['immigration_expert'],
                 context=context
             ),
@@ -83,7 +84,8 @@ def analyze_investments(investments, llm):
                 context=context
             ),
             Task(
-                description=f"Evaluate EB-5 program compliance for investment {investment['id']}",
+                description=f"""Evaluate EB-5 program compliance for investment {investment['id']},  with a special focus on
+                program requirements, project structuring and regional center compliance.""" 
                 agent=agents['eb5_specialist'],
                 context=context
             )

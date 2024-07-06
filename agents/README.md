@@ -2,46 +2,48 @@
 
 This directory contains the specialized agents used in the EB-5 Investment Analysis system.
 
-## BaseAgent
+## Base Agent
 
-The `BaseAgent` class (`base_agent.py`) serves as the foundation for all specialized agents. It provides common functionality such as:
+The `BaseAgent` class serves as the foundation for all specialized agents in the EB-5 investment analysis system. It extends the `Agent` class from the CrewAI framework and provides additional functionality for context handling, semantic search, and web search capabilities.
 
-- Setting and accessing the investment context
-- Performing semantic searches within the context
-- Conducting deep dives into specific topics
+## Key Features
 
-### Key Methods
-
-- `set_context(context)`: Sets the investment context for the agent.
-- `semantic_search(query, top_k=5)`: Performs a semantic search on the context, returning the top_k most relevant results.
-- `deep_dive(topic)`: Conducts a more comprehensive search on a specific topic, returning concatenated relevant information.
-
-## Specialized Agents
-
-1. **Financial Analyst** (`financial_analyst.py`): Analyzes financial aspects of EB-5 investments.
-2. **Immigration Law Expert** (`immigration_law_expert.py`): Evaluates immigration law compliance for investments.
-3. **Risk Assessor** (`risk_assessor.py`): Assesses various risks associated with EB-5 investments.
-4. **EB-5 Program Specialist** (`eb5_program_specialist.py`): Evaluates compliance with EB-5 program requirements.
-
-Each specialized agent inherits from `BaseAgent` and implements specific analysis methods relevant to their expertise.
+1. **Context Management**: Set and manage the context for the agent's analysis.
+2. **Semantic Search**: Perform semantic searches within the set context.
+3. **Deep Dive**: Conduct a more comprehensive search on specific topics.
+4. **Web Search**: Perform web searches for additional information.
+5. **Memory Operations**: Store and retrieve information in short-term and long-term memory.
 
 ## Usage
 
-Agents are initialized in the main analysis pipeline and are provided with the investment context. They use their specialized knowledge, the provided context, and common tools (semantic search, deep dive) to perform their analyses.
-
-Example usage in the main pipeline:
-
 ```python
-financial_analyst = FinancialAnalyst(llm=llm)
-financial_analyst.set_context(investment_context)
-financial_analysis = financial_analyst.analyze()
+from agents.base_agent import BaseAgent
+
+class SpecializedAgent(BaseAgent):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Additional initialization for specialized agent
+
+    def analyze(self, context):
+        self.set_context(context)
+        # Implement specialized analysis logic
 ```
 
-## Extending the System
+## Methods
 
-To add new specialized agents:
+- `set_context(context)`: Set the context for the agent's analysis.
+- `semantic_search(query, top_k=5)`: Perform a semantic search within the set context.
+- `deep_dive(topic)`: Conduct a more comprehensive search on a specific topic.
+- `web_search(query)`: Perform a web search for additional information.
+- `add_to_short_term_memory(key, value)`: Store information in short-term memory.
+- `add_to_long_term_memory(key, value)`: Store information in long-term memory.
+- `get_from_short_term_memory(key)`: Retrieve information from short-term memory.
+- `get_from_long_term_memory(key)`: Retrieve information from long-term memory.
+- `get_all_long_term_memory()`: Retrieve all information stored in long-term memory.
 
-1. Create a new Python file for the agent (e.g., `new_specialist.py`).
-2. Define a class that inherits from `BaseAgent`.
-3. Implement the specialized analysis methods.
-4. Update the main analysis pipeline to include the new agent.
+## Dependencies
+
+- crewai
+- requests
+
+Ensure these dependencies are installed before using the BaseAgent.
